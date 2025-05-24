@@ -34,11 +34,23 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 coffee_data = {
-    1: {"name": "Espresso", "instructions": "Brew under pressure."},
-    2: {"name": "Latte", "instructions": "Add steamed milk to espresso."},
+    1: {
+        "id": 1,
+        "name": "Espresso",
+        "instructions": "Brew under pressure.",
+        "image": "https://upload.wikimedia.org/wikipedia/commons/4/45/A_small_cup_of_coffee.JPG",
+    },
+    2: {
+        "id": 2,
+        "name": "Latte",
+        "instructions": "Add steamed milk to espresso.",
+        "image": "https://www.freepik.com/free-photo/close-up-fresh-coffee-with-milk-sugar_7077593.htm#fromView=keyword&page=1&position=4&uuid=d045c84d-9bb3-42df-bc62-822af45e535c&query=Latte",
+    },
     3: {
+        "id": 3,
         "name": "Cappuccino",
         "instructions": "Use equal parts espresso, milk, and foam.",
+        "image": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Cappuccino_at_Sightglass_Coffee.jpg",
     },
 }
 

@@ -1,10 +1,27 @@
-
 <template>
   <v-container>
     <h2>Select a Coffee</h2>
-    <v-select :items="coffees" item-title="name" v-model="selected" label="Choose coffee" />
-    <v-btn @click="brew">Brew it</v-btn>
-    <v-alert v-if="instructions" type="success">{{ instructions }}</v-alert>
+
+    <!-- Dropdown -->
+    <v-select :items="coffees" item-title="name" item-value="id" v-model="selected" label="Choose coffee" />
+
+    <!-- Brew Button -->
+    <v-btn @click="brew" class="mt-2">BREW IT</v-btn>
+
+    <!-- Brew Instructions -->
+    <v-alert v-if="instructions" type="info" class="mt-4">
+      {{ instructions }}
+    </v-alert>
+
+    <!-- Carousel -->
+    <v-carousel cycle hide-delimiter-background height="300" class="mt-10">
+      <v-carousel-item v-for="(coffee, i) in coffees" :key="i"
+        :src="coffee.image || 'https://via.placeholder.com/600x300?text=' + coffee.name">
+        <v-row class="fill-height" align="center" justify="center">
+          <h2 class="text-white">{{ coffee.name }}</h2>
+        </v-row>
+      </v-carousel-item>
+    </v-carousel>
   </v-container>
 </template>
 
@@ -22,7 +39,7 @@ onMounted(async () => {
 
 const brew = async () => {
   if (!selected.value) return
-  const res = await fetch(`http://localhost:8000/brew/${selected.value.id}`)
+  const res = await fetch(`http://localhost:8000/brew/${selected.value}`)
   const data = await res.json()
   instructions.value = data.instructions
 }
