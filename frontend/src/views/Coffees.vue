@@ -1,23 +1,22 @@
 <template>
   <v-container>
 
-    <!-- Carousel on top -->
+    <!-- Dynamic Image Carousel -->
     <v-carousel cycle hide-delimiter-background height="300" class="mb-10">
-      <v-carousel-item v-for="(coffee, i) in coffees" :key="i" :src="coffee.image">
-        <v-row class="fill-height" align="center" justify="center">
-          <h2 class="text-white">{{ coffee.name }}</h2>
+      <v-carousel-item v-for="(img, i) in coffeeImages" :key="i" :src="img">
+        <!-- Text over carousel
+          <v-row class="fill-height" align="center" justify="center">
+          <h2 class="text-white">Coffee Moment {{ i + 1 }}</h2>
         </v-row>
+      -->
       </v-carousel-item>
     </v-carousel>
 
-    <!-- Heading and dropdown -->
+    <!-- Dropdown + Brew Button -->
     <h2>Select a Coffee</h2>
-
     <v-select :items="coffees" item-title="name" item-value="id" v-model="selected" label="Choose coffee" />
-
     <v-btn @click="brew" class="mt-2">BREW IT</v-btn>
 
-    <!-- Brew instructions + scroll target -->
     <v-alert v-if="instructions" ref="instructionsRef" type="info" class="mt-4 scroll-target">
       {{ instructions }}
     </v-alert>
@@ -27,6 +26,10 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
+
+// Dynamically load all carousel images from assets/carousel/
+const imageModules = import.meta.glob('./../assets/carousel/*.{png,jpg,jpeg}', { eager: true })
+const coffeeImages = Object.values(imageModules).map(mod => mod.default)
 
 const coffees = ref([])
 const selected = ref(null)
@@ -40,13 +43,11 @@ onMounted(async () => {
 
 const brew = async () => {
   if (!selected.value) return
-
-  const res = await fetch(`http://localhost:8000/brew/${selected.value}`)
+  const res = await fetch(`http://localhost:8000/coffees/brew/${selected.value}`)
   const data = await res.json()
   instructions.value = data.instructions
 
   await nextTick()
-
   const el = instructionsRef.value?.$el || instructionsRef.value?.$?.vnode?.el
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })

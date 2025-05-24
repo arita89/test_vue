@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: coffee-db
+    restart: always
+    environment:
+      POSTGRES_USER: coffee
+      POSTGRES_PASSWORD: coffee
+      POSTGRES_DB: coffee_db
+    volumes:
+      - coffee_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  coffee_data:
