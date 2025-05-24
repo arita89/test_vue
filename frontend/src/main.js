@@ -3,6 +3,7 @@ import App from './App.vue'
 
 import { createVuetify } from 'vuetify'
 import 'vuetify/styles'
+import 'leaflet/dist/leaflet.css'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
@@ -11,6 +12,8 @@ import Home from './views/Home.vue'
 import Coffees from './views/Coffees.vue'
 import UploadRecipe from './views/UploadRecipe.vue'
 import Contact from './views/Contact.vue'
+import MapView from './views/Map.vue'
+import Gallery from './views/Gallery.vue'
 
 // 1️⃣ Custom Coffee Theme
 const myCoffeeTheme = {
@@ -45,6 +48,8 @@ const routes = [
   { path: '/coffees', component: Coffees },
   { path: '/upload', component: UploadRecipe },
   { path: '/contact', component: Contact },
+  { path: '/map', component: MapView },
+  { path: '/gallery', component: Gallery }
 ]
 
 const router = createRouter({

@@ -38,6 +38,12 @@ watch(isDark, (val) => {
         <v-list-item to="/upload">
           <v-list-item-title>Upload Recipe</v-list-item-title>
         </v-list-item>
+        <v-list-item to="/map">
+          <v-list-item-title>Map</v-list-item-title>
+        </v-list-item>
+        <v-list-item to="/gallery">
+          <v-list-item-title>Gallery</v-list-item-title>
+        </v-list-item>
         <v-list-item to="/contact">
           <v-list-item-title>Contact</v-list-item-title>
         </v-list-item>

@@ -5,6 +5,9 @@ from typing import List
 class CoffeeCreate(BaseModel):
     name: str
     description: str
+    location: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class CoffeeOut(CoffeeCreate):

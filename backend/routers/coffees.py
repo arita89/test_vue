@@ -55,3 +55,22 @@ def brew_coffee(coffee_id: int, db: Session = Depends(database.get_db)):
     # Try static instructions first, fallback to description
     instructions = brew_instructions.get(coffee.name, coffee.description)
     return {"name": coffee.name, "instructions": instructions}
+
+
+@router.get("/map")
+def coffee_locations(db: Session = Depends(database.get_db)):
+    coffees = (
+        db.query(models.Coffee)
+        .filter(models.Coffee.latitude.isnot(None), models.Coffee.longitude.isnot(None))
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "location": c.location,
+            "latitude": c.latitude,
+            "longitude": c.longitude,
+        }
+        for c in coffees
+    ]
