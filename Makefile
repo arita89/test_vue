@@ -13,6 +13,10 @@ format: ## Format backend with black and frontend with prettier
 	venv/bin/black backend
 	prettier --write frontend
 
+resetdb:  ## Drop and recreate the PostgreSQL database, then seed it
+	docker exec -i coffee-db psql -U coffee -d coffee_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+	PYTHONPATH=. python3 backend/init_db.py
+
 help: ## Show available make commands
 	@echo ""
 	@echo "Available commands:"

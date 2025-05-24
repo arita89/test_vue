@@ -1,4 +1,3 @@
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,6 +9,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 Base = declarative_base()
 
+
 def get_db():
     db: Session = SessionLocal()
     try:
@@ -20,6 +20,7 @@ def get_db():
         raise e
     finally:
         db.close()
+
 
 @contextmanager
 def db_session():
