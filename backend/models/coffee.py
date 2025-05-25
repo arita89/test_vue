@@ -6,8 +6,8 @@ from ..core.database import Base
 class Coffee(Base):
     __tablename__ = "coffees"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    description = Column(String)
+    name = Column(String, unique=True, nullable=False)
+    description = Column(String, nullable=False)
     location = Column(String, nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)

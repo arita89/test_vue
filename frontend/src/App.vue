@@ -1,27 +1,36 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useTheme } from 'vuetify'
+import { useRouter } from 'vue-router'
+import { auth } from './services/auth'
 
 const theme = useTheme()
+const router = useRouter()
 const isDark = ref(false)
 
-// Load saved preference on mount
 onMounted(() => {
+  auth.fetchUser()
   const saved = localStorage.getItem('theme')
-  if (saved === 'dark') {
-    isDark.value = true
-    theme.global.name.value = 'dark'
-  } else {
-    isDark.value = false
-    theme.global.name.value = 'coffee'
-  }
+  isDark.value = saved === 'dark'
+  theme.global.name.value = isDark.value ? 'dark' : 'coffee'
 })
 
-// Watch toggle and store preference
 watch(isDark, (val) => {
   theme.global.name.value = val ? 'dark' : 'coffee'
   localStorage.setItem('theme', val ? 'dark' : 'coffee')
 })
+
+const isAuthenticated = auth.isAuthenticated
+//const username = auth.getUser
+// const username = computed(() => auth.getUser || '')
+
+const username = computed(() => auth.getUser.value?.username || '')
+
+
+const logout = () => {
+  auth.clearToken()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -35,34 +44,49 @@ watch(isDark, (val) => {
         <v-list-item to="/coffees">
           <v-list-item-title>Coffees</v-list-item-title>
         </v-list-item>
-        <v-list-item to="/upload">
-          <v-list-item-title>Upload Recipe</v-list-item-title>
-        </v-list-item>
         <v-list-item to="/map">
           <v-list-item-title>Map</v-list-item-title>
         </v-list-item>
-        <v-list-item to="/gallery">
-          <v-list-item-title>Gallery</v-list-item-title>
-        </v-list-item>
+        <template v-if="isAuthenticated">
+          <v-list-item to="/upload">
+            <v-list-item-title>Upload Recipe</v-list-item-title>
+          </v-list-item>
+          <v-list-item to="/gallery">
+            <v-list-item-title>Gallery</v-list-item-title>
+          </v-list-item>
+        </template>
         <v-list-item to="/contact">
           <v-list-item-title>Contact</v-list-item-title>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
-    <!-- Main Content trasnitions can be: fade, slide, scale-->
+    <!-- Main Content -->
     <v-main>
       <transition name="fade" mode="out-in">
         <router-view />
       </transition>
     </v-main>
 
-
-    <!-- Footer with Theme Toggle -->
+    <!-- Footer -->
     <v-footer app>
       <v-container class="d-flex justify-space-between align-center">
-        <span>© 2025 CoffeeTime</span>
-        <v-switch v-model="isDark" inset color="primary" :label="isDark ? '🌙 Dark Mode' : '☕ Coffee Mode'" />
+        <div>
+          <span>© 2025 CoffeeTime</span>
+          <template v-if="isAuthenticated">
+            <span class="ml-3">👤 {{ username }}</span>
+            <v-btn text size="small" class="ml-2" @click="logout">Logout</v-btn>
+          </template>
+          <template v-else>
+            <v-btn text size="small" class="ml-2" to="/login">Login</v-btn>
+          </template>
+        </div>
+        <v-switch
+          v-model="isDark"
+          inset
+          color="primary"
+          :label="isDark ? '🌙 Dark Mode' : '☕ Coffee Mode'"
+        />
       </v-container>
     </v-footer>
   </v-app>

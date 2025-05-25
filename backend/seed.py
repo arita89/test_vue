@@ -1,5 +1,5 @@
 from .models.coffee import Coffee
-from .database import SessionLocal
+from .core.database import SessionLocal
 
 
 def seed_default_coffees():

@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './assets/transitions.css'
+import { auth } from './services/auth'
 
 import { createVuetify } from 'vuetify'
 import 'vuetify/styles'
@@ -15,6 +16,7 @@ import UploadRecipe from './views/UploadRecipe.vue'
 import Contact from './views/Contact.vue'
 import MapView from './views/Map.vue'
 import Gallery from './views/Gallery.vue'
+import Login from './views/Login.vue'
 
 // 1️⃣ Custom Coffee Theme
 const myCoffeeTheme = {
@@ -43,16 +45,23 @@ const vuetify = createVuetify({
   }
 })
 
-// 3️⃣ Router setup
+const requireAuth = (to, from, next) => {
+  if (!auth.getToken()) {
+    next('/login')
+  } else {
+    next()
+  }
+}
+
 const routes = [
   { path: '/', component: Home },
   { path: '/coffees', component: Coffees },
-  { path: '/upload', component: UploadRecipe },
-  { path: '/contact', component: Contact },
+  { path: '/upload', component: UploadRecipe, beforeEnter: requireAuth },
+  { path: '/gallery', component: Gallery, beforeEnter: requireAuth },
   { path: '/map', component: MapView },
-  { path: '/gallery', component: Gallery }
+  { path: '/contact', component: Contact },
+  { path: '/login', component: Login }
 ]
-
 const router = createRouter({
   history: createWebHistory(),
   routes

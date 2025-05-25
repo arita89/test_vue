@@ -10,7 +10,7 @@ from ..schemas import (
     ImageLocationPatch,
 )
 from ..models import Coffee, CoffeeImage
-from ..core import database
+from ..core import database, auth
 from pathlib import Path
 from typing import List
 
@@ -26,27 +26,32 @@ async def upload_recipe(
     description: str = Form(...),
     images: List[UploadFile] = File(default=[]),
     db: Session = Depends(database.get_db),
+    user: str = Depends(auth.get_current_user),
 ):
+    existing = db.query(Coffee).filter_by(name=name).first()
+    if existing:
+        raise HTTPException(
+            status_code=400, detail="A recipe with this name already exists."
+        )
+
     record = Coffee(name=name, description=description)
     db.add(record)
-    db.flush()  # ← get record.id here
+    db.flush()  # get id
 
     for img in images:
         file_path = UPLOAD_DIR / img.filename
         with open(file_path, "wb") as f:
             f.write(await img.read())
 
-        coffee_img = CoffeeImage(filename=img.filename, coffee_id=record.id)  # ✅ FIXED
+        coffee_img = CoffeeImage(filename=img.filename, coffee_id=record.id)
         db.add(coffee_img)
 
     db.commit()
     db.refresh(record)
     return {
         "id": record.id,
-        "name": record.name,
-        "images": [
-            img.filename for img in record.images
-        ],  # ✅ Better than using raw 'images'
+        "name": name,
+        "images": [img.filename for img in record.images],
     }
 
 

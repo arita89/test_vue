@@ -8,7 +8,7 @@ import exifread
 
 from ..schemas import CoffeeCreate, CoffeeOut, ImageLocationUpdate, ImageLocationPatch
 from ..models import CoffeeImage
-from ..core import database
+from ..core import database, auth
 
 router = APIRouter(prefix="/gallery", tags=["Gallery"])
 
@@ -21,6 +21,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 async def upload_gallery_images(
     images: List[UploadFile] = File(...),
     db: Session = Depends(database.get_db),
+    user: str = Depends(auth.get_current_user),
 ):
     uploaded = []
     for img in images:
@@ -38,6 +39,7 @@ async def upload_gallery_images(
 async def upload_with_location(
     image: UploadFile = File(...),
     db: Session = Depends(database.get_db),
+    user: str = Depends(auth.get_current_user),
 ):
     file_path = UPLOAD_DIR / image.filename
     with open(file_path, "wb") as f:
@@ -64,6 +66,7 @@ async def upload_with_location(
 def set_image_location(
     payload: ImageLocationUpdate,
     db: Session = Depends(database.get_db),
+    user: str = Depends(auth.get_current_user),
 ):
     img = db.query(CoffeeImage).filter_by(filename=payload.filename).first()
     if not img:
@@ -78,6 +81,7 @@ def set_image_location(
 def patch_image_location(
     patch: ImageLocationPatch,
     db: Session = Depends(database.get_db),
+    user: str = Depends(auth.get_current_user),
 ):
     img = db.query(CoffeeImage).filter_by(filename=patch.filename).first()
     if not img:
@@ -97,10 +101,14 @@ def patch_image_location(
 
 
 @router.delete("/image/{filename}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_image(filename: str, db: Session = Depends(database.get_db)):
+def delete_image(
+    filename: str,
+    db: Session = Depends(database.get_db),
+    user: str = Depends(auth.get_current_user),
+):
     img = db.query(CoffeeImage).filter_by(filename=filename).first()
     if not img:
-        raise HTTPException(status_code=404, detail="Image not found in database")
+        raise HTTPException(status_code=404, detail="Image not found")
 
     db.delete(img)
     db.commit()

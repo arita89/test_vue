@@ -54,6 +54,7 @@
 import VueEasyLightbox from 'vue-easy-lightbox'
 import { ref, onMounted } from 'vue'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
+import { auth } from '../services/auth'
 
 const images = ref([])
 const visible = ref(false)
@@ -70,7 +71,11 @@ const snackbar = ref({
 })
 
 const fetchGallery = async () => {
-    const res = await fetch('http://localhost:8000/gallery')
+    const res = await fetch('http://localhost:8000/gallery',{
+        headers: {
+            Authorization: `Bearer ${auth.getToken()}`
+        },}
+    )
     images.value = await res.json()
 }
 
@@ -90,6 +95,7 @@ const uploadImages = async () => {
 
         const res = await fetch('http://localhost:8000/gallery/upload-with-meta', {
             method: 'POST',
+            headers: { Authorization: `Bearer ${auth.getToken()}` },
             body: formData,
         })
 
@@ -117,7 +123,7 @@ const confirmLocation = async (useIt) => {
     if (useIt) {
         await fetch(`http://localhost:8000/gallery/set-location`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',Authorization: `Bearer ${auth.getToken()}` },
             body: JSON.stringify({
                 filename: pendingUploadFile.value,
                 latitude: gps.value.latitude,
