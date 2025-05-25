@@ -19,4 +19,6 @@ class CoffeeImage(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String)
     coffee_id = Column(Integer, ForeignKey("coffees.id"), nullable=True)
+    latitude = Column(Float, nullable=True)  # ✅ add this
+    longitude = Column(Float, nullable=True)  # ✅ and this
     coffee = relationship("Coffee", back_populates="images")

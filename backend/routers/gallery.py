@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 import exifread
 from .. import models, database
+from ..schemas import ImageLocationUpdate, ImageLocationPatch
 
 router = APIRouter(prefix="/gallery", tags=["Gallery"])
 
@@ -51,14 +52,56 @@ async def upload_with_location(
 
 
 @router.post("/set-location")
-def set_image_location(data: dict, db: Session = Depends(database.get_db)):
-    img = db.query(models.CoffeeImage).filter_by(filename=data["filename"]).first()
+def set_image_location(
+    payload: ImageLocationUpdate, db: Session = Depends(database.get_db)
+):
+    img = db.query(models.CoffeeImage).filter_by(filename=payload.filename).first()
     if not img:
         raise HTTPException(status_code=404, detail="Image not found")
-    img.latitude = data["latitude"]
-    img.longitude = data["longitude"]
+
+    img.latitude = payload.latitude
+    img.longitude = payload.longitude
     db.commit()
     return {"status": "updated"}
+
+
+@router.patch("/image/location")
+def patch_image_location(
+    patch: ImageLocationPatch, db: Session = Depends(database.get_db)
+):
+    img = db.query(models.CoffeeImage).filter_by(filename=patch.filename).first()
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    if patch.latitude is not None:
+        img.latitude = patch.latitude
+    if patch.longitude is not None:
+        img.longitude = patch.longitude
+
+    db.commit()
+    return {
+        "filename": img.filename,
+        "latitude": img.latitude,
+        "longitude": img.longitude,
+    }
+
+
+@router.delete("/image/{filename}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_image(filename: str, db: Session = Depends(database.get_db)):
+    # Delete DB record
+    img = db.query(models.CoffeeImage).filter_by(filename=filename).first()
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found in database")
+
+    db.delete(img)
+    db.commit()
+
+    # Delete file from disk
+    file_path = UPLOAD_DIR / filename
+    if file_path.exists():
+        file_path.unlink()
+
+    return
 
 
 # 🖼️ List all uploaded images (linked and unlinked)
@@ -67,7 +110,7 @@ def list_gallery_images():
     return [
         f"http://localhost:8000/gallery/image/{file.name}"
         for file in UPLOAD_DIR.iterdir()
-        if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp"]
+        if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"]
     ]
 
 
@@ -101,3 +144,22 @@ def extract_gps(filepath: Path):
         }
     except KeyError:
         return None
+
+
+@router.get("/map")
+def gallery_locations(db: Session = Depends(database.get_db)):
+    images = (
+        db.query(models.CoffeeImage)
+        .filter(models.CoffeeImage.latitude.isnot(None))
+        .all()
+    )
+    return [
+        {
+            "id": img.id,
+            "filename": img.filename,
+            "latitude": img.latitude,
+            "longitude": img.longitude,
+            "url": f"http://localhost:8000/gallery/image/{img.filename}",
+        }
+        for img in images
+    ]

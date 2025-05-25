@@ -3,9 +3,10 @@
         <h2 class="mb-4">Image Gallery</h2>
 
         <!-- Upload Section -->
-        <v-file-input v-model="uploadFiles" label="Add image(s) to gallery" accept="image/*" multiple
-            prepend-icon="mdi-upload" />
-        <v-btn @click="uploadImages" color="primary" class="mb-6">Upload</v-btn>
+        <v-file-input v-model="uploadFiles" label="Drop or select images" accept="image/*" multiple show-size
+            prepend-icon="mdi-camera" class="mb-6" clearable @change="uploadImages" />
+
+        <!-- <v-btn @click="uploadImages" color="primary" class="mb-6">Upload</v-btn>-->
 
         <!-- Gallery Grid -->
         <v-row>
@@ -83,27 +84,31 @@ const showImage = i => {
 const uploadImages = async () => {
     if (!uploadFiles.value.length) return
 
-    const file = uploadFiles.value[0]
-    const formData = new FormData()
-    formData.append('image', file)
+    for (const file of uploadFiles.value) {
+        const formData = new FormData()
+        formData.append('image', file)
 
-    const res = await fetch('http://localhost:8000/gallery/upload-with-meta', {
-        method: 'POST',
-        body: formData,
-    })
-    const result = await res.json()
+        const res = await fetch('http://localhost:8000/gallery/upload-with-meta', {
+            method: 'POST',
+            body: formData,
+        })
+
+        const result = await res.json()
+
+        if (result.location) {
+            gps.value = result.location
+            pendingUploadFile.value = result.filename
+            locationDialog.value = true
+            // Pause here — wait for user to confirm before continuing
+            return
+        } else {
+            snackbar.value.message = `Uploaded ${file.name} (no location)`
+            snackbar.value.visible = true
+        }
+    }
 
     uploadFiles.value = []
-
-    if (result.location) {
-        gps.value = result.location
-        pendingUploadFile.value = result.filename
-        locationDialog.value = true
-    } else {
-        snackbar.value.message = "Image uploaded (no location found)"
-        snackbar.value.visible = true
-        await fetchGallery()
-    }
+    await fetchGallery()
 }
 
 const confirmLocation = async (useIt) => {

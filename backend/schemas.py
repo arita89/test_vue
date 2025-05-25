@@ -1,5 +1,6 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+
+from typing import List, Optional
 
 
 class CoffeeCreate(BaseModel):
@@ -23,3 +24,15 @@ class CoffeeImageOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ImageLocationUpdate(BaseModel):
+    filename: str = Field(..., example="coffee.jpg")
+    latitude: float = Field(..., example=41.9028)
+    longitude: float = Field(..., example=12.4964)
+
+
+class ImageLocationPatch(BaseModel):
+    filename: str = Field(..., example="coffee.jpg")
+    latitude: Optional[float] = Field(None, example=45.07)
+    longitude: Optional[float] = Field(None, example=7.69)

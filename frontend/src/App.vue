@@ -50,10 +50,13 @@ watch(isDark, (val) => {
       </v-list>
     </v-navigation-drawer>
 
-    <!-- Main Content -->
+    <!-- Main Content trasnitions can be: fade, slide, scale-->
     <v-main>
-      <router-view />
+      <transition name="fade" mode="out-in">
+        <router-view />
+      </transition>
     </v-main>
+
 
     <!-- Footer with Theme Toggle -->
     <v-footer app>
