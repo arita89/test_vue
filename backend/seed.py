@@ -1,4 +1,4 @@
-from .models import Coffee
+from .models.coffee import Coffee
 from .database import SessionLocal
 
 

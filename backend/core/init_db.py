@@ -1,4 +1,4 @@
-from backend.database import Base, engine
+from core.database import Base, engine
 from backend.seed import seed_default_coffees
 
 # Create tables

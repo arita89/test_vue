@@ -5,8 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from pathlib import Path
 from typing import List
 import exifread
-from .. import models, database
-from ..schemas import ImageLocationUpdate, ImageLocationPatch
+
+from ..schemas import CoffeeCreate, CoffeeOut, ImageLocationUpdate, ImageLocationPatch
+from ..models import CoffeeImage
+from ..core import database
 
 router = APIRouter(prefix="/gallery", tags=["Gallery"])
 
@@ -25,7 +27,7 @@ async def upload_gallery_images(
         file_path = UPLOAD_DIR / img.filename
         with open(file_path, "wb") as f:
             f.write(await img.read())
-        db.add(models.CoffeeImage(filename=img.filename, coffee_id=None))
+        db.add(CoffeeImage(filename=img.filename, coffee_id=None))
         uploaded.append(img.filename)
 
     db.commit()
@@ -34,31 +36,38 @@ async def upload_gallery_images(
 
 @router.post("/upload-with-meta")
 async def upload_with_location(
-    image: UploadFile = File(...), db: Session = Depends(database.get_db)
+    image: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
 ):
     file_path = UPLOAD_DIR / image.filename
     with open(file_path, "wb") as f:
         f.write(await image.read())
 
     gps = extract_gps(file_path)
-
-    db.add(models.CoffeeImage(filename=image.filename, coffee_id=None))
+    db.add(
+        CoffeeImage(
+            filename=image.filename,
+            coffee_id=None,
+            latitude=gps.get("latitude") if gps else None,
+            longitude=gps.get("longitude") if gps else None,
+        )
+    )
     db.commit()
 
     return {
         "filename": image.filename,
-        "location": gps,  # Could be None if no GPS found
+        "location": gps,  # Might be None
     }
 
 
 @router.post("/set-location")
 def set_image_location(
-    payload: ImageLocationUpdate, db: Session = Depends(database.get_db)
+    payload: ImageLocationUpdate,
+    db: Session = Depends(database.get_db),
 ):
-    img = db.query(models.CoffeeImage).filter_by(filename=payload.filename).first()
+    img = db.query(CoffeeImage).filter_by(filename=payload.filename).first()
     if not img:
         raise HTTPException(status_code=404, detail="Image not found")
-
     img.latitude = payload.latitude
     img.longitude = payload.longitude
     db.commit()
@@ -67,9 +76,10 @@ def set_image_location(
 
 @router.patch("/image/location")
 def patch_image_location(
-    patch: ImageLocationPatch, db: Session = Depends(database.get_db)
+    patch: ImageLocationPatch,
+    db: Session = Depends(database.get_db),
 ):
-    img = db.query(models.CoffeeImage).filter_by(filename=patch.filename).first()
+    img = db.query(CoffeeImage).filter_by(filename=patch.filename).first()
     if not img:
         raise HTTPException(status_code=404, detail="Image not found")
 
@@ -88,19 +98,16 @@ def patch_image_location(
 
 @router.delete("/image/{filename}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_image(filename: str, db: Session = Depends(database.get_db)):
-    # Delete DB record
-    img = db.query(models.CoffeeImage).filter_by(filename=filename).first()
+    img = db.query(CoffeeImage).filter_by(filename=filename).first()
     if not img:
         raise HTTPException(status_code=404, detail="Image not found in database")
 
     db.delete(img)
     db.commit()
 
-    # Delete file from disk
     file_path = UPLOAD_DIR / filename
     if file_path.exists():
         file_path.unlink()
-
     return
 
 
@@ -114,13 +121,27 @@ def list_gallery_images():
     ]
 
 
-# 📥 Serve image file
 @router.get("/image/{filename}", response_class=FileResponse)
 def serve_image_file(filename: str):
     file_path = UPLOAD_DIR / filename
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(file_path)
+
+
+@router.get("/map")
+def gallery_locations(db: Session = Depends(database.get_db)):
+    images = db.query(CoffeeImage).filter(CoffeeImage.latitude.isnot(None)).all()
+    return [
+        {
+            "id": img.id,
+            "filename": img.filename,
+            "latitude": img.latitude,
+            "longitude": img.longitude,
+            "url": f"http://localhost:8000/gallery/image/{img.filename}",
+        }
+        for img in images
+    ]
 
 
 def extract_gps(filepath: Path):
@@ -144,22 +165,3 @@ def extract_gps(filepath: Path):
         }
     except KeyError:
         return None
-
-
-@router.get("/map")
-def gallery_locations(db: Session = Depends(database.get_db)):
-    images = (
-        db.query(models.CoffeeImage)
-        .filter(models.CoffeeImage.latitude.isnot(None))
-        .all()
-    )
-    return [
-        {
-            "id": img.id,
-            "filename": img.filename,
-            "latitude": img.latitude,
-            "longitude": img.longitude,
-            "url": f"http://localhost:8000/gallery/image/{img.filename}",
-        }
-        for img in images
-    ]
