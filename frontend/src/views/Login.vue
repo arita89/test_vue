@@ -29,6 +29,7 @@ const login = async () => {
   if (res.ok) {
     const data = await res.json()
     auth.setToken(data.access_token)
+    await auth.fetchUser()  // 🔥 ensure this runs so the user is reactive
     router.push('/')
   } else {
     error.value = 'Login failed'
